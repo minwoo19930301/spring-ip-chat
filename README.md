@@ -2,6 +2,10 @@
 
 로그인 없이 접속자의 IP를 ID처럼 사용해서 대화하는 공개 채팅방입니다.
 
+## 배포 주소
+- 서비스: [http://158.179.166.26:18080/](http://158.179.166.26:18080/)
+- GitHub: [https://github.com/minwoo19930301/spring-ip-chat](https://github.com/minwoo19930301/spring-ip-chat)
+
 ## 기능
 - Spring WebSocket(STOMP + SockJS) 실시간 채팅
 - 로그인 없음, 발신자 식별자는 서버가 추출한 클라이언트 IP
