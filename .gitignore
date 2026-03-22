@@ -1,0 +1,6 @@
+/target/
+/data/
+*.log
+.DS_Store
+.deploy/latest_upload.txt
+.deploy/*.tar.gz

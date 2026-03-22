@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>IP 공개 채팅방</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 16px 16px calc(92px + env(safe-area-inset-bottom));
+            line-height: 1.4;
+        }
+        h1, p { margin-top: 0; }
+        #messages {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #messages li {
+            margin: 6px 0;
+            word-break: break-word;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+        #messages li span {
+            flex: 1;
+            min-width: 0;
+        }
+        .delete-btn {
+            font-size: 14px;
+            padding: 2px 6px;
+            flex-shrink: 0;
+        }
+        #composer {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+            background: #fff;
+            border-top: 1px solid #ddd;
+        }
+        #text,
+        #send {
+            font-size: 16px;
+        }
+        #text {
+            flex: 1;
+            min-width: 0;
+            padding: 10px;
+        }
+        #send {
+            padding: 10px 14px;
+        }
+    </style>
+</head>
+<body>
+<h1>공개 채팅방</h1>
+<p>내 ID(IP): <strong id="my-ip">확인 중...</strong></p>
+<p id="status">연결 중...</p>
+
+<ul id="messages"></ul>
+
+<div id="composer">
+    <input id="text" type="text" maxlength="2000" placeholder="메시지를 입력하세요" enterkeyhint="send"/>
+    <button id="send" type="button">전송</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

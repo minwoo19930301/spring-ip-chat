@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ipchat
+      POSTGRES_USER: ipchat
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ipchat -d ipchat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      PORT: 8080
+      DATABASE_URL: jdbc:postgresql://db:5432/ipchat
+      DATABASE_USERNAME: ipchat
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      CHAT_RETENTION_DAYS: ${CHAT_RETENTION_DAYS:-30}
+      CHAT_REDIS_ENABLED: ${CHAT_REDIS_ENABLED:-true}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "${APP_PORT:-80}:8080"
+
+volumes:
+  postgres_data:
+  redis_data:

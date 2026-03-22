@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: spring-ip-chat
+    runtime: docker
+    plan: free
+    autoDeploy: true
