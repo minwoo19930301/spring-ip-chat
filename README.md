@@ -112,6 +112,7 @@ mvn spring-boot:run
 
 - 공개 앱 포트: `APP_PORT` (기본 `80`)
 - 관리 포트: `APP_MANAGEMENT_PORT` -> 컨테이너 내부 `8081`
+- 앱 자체도 기본적으로 `MANAGEMENT_ADDRESS=127.0.0.1`에 바인딩됩니다.
 - Docker Compose에서는 `127.0.0.1:${APP_MANAGEMENT_PORT}:8081`로만 바인딩되므로 외부 인터넷에 그대로 노출되지 않습니다.
 
 활성 엔드포인트:
