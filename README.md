@@ -19,6 +19,8 @@
 - Java 17
 - Spring Boot 3
 - Spring WebSocket
+- Spring Boot Actuator
+- Micrometer Prometheus
 - Spring Data Redis
 - Spring Data JPA
 - H2 (로컬 기본)
@@ -105,6 +107,53 @@ mvn spring-boot:run
 - Send Destination: `/app/chat.send`
 - Subscribe Topic: `/topic/public`
 
+## 관측성(Observability)
+앱에는 관측성용 관리 포트를 따로 분리해 두었습니다.
+
+- 공개 앱 포트: `APP_PORT` (기본 `80`)
+- 관리 포트: `APP_MANAGEMENT_PORT` -> 컨테이너 내부 `8081`
+- Docker Compose에서는 `127.0.0.1:${APP_MANAGEMENT_PORT}:8081`로만 바인딩되므로 외부 인터넷에 그대로 노출되지 않습니다.
+
+활성 엔드포인트:
+- `GET /actuator/health`
+- `GET /actuator/health/liveness`
+- `GET /actuator/health/readiness`
+- `GET /actuator/info`
+- `GET /actuator/metrics`
+- `GET /actuator/prometheus`
+
+예시:
+```bash
+curl http://127.0.0.1:18081/actuator/health
+curl http://127.0.0.1:18081/actuator/prometheus
+```
+
+### OCI에 붙일 수 있는 항목
+실제로 붙일 가치가 있는 건 아래 4개입니다.
+
+1. `Monitoring`
+- Compute 기본 메트릭(CPU, 메모리, 네트워크)과 함께 앱 메트릭을 봅니다.
+- 앱 쪽은 `/actuator/prometheus`를 Management Agent나 수집 에이전트가 읽을 수 있게 준비해 둔 상태입니다.
+
+2. `Logging`
+- Spring 로그는 stdout으로 나가도록 맞춰 두었습니다.
+- Docker 컨테이너 로그 또는 systemd/journald 로그를 OCI Logging으로 수집하면 됩니다.
+- 로그 패턴에 `traceId`, `spanId` 자리를 미리 넣어 두어서 APM 추적과 연결하기 쉽게 했습니다.
+
+3. `APM`
+- 코드 레벨 대공사는 필요 없습니다.
+- APM Java agent를 붙일 수 있게 `JAVA_OPTS` 훅을 열어 두었습니다.
+- 예를 들어 `JAVA_OPTS=-javaagent:/opt/oracle-apm-agent/apm-agent.jar ...` 형태로 주입하면 됩니다.
+
+4. `Notifications` / `Console Dashboards`
+- Monitoring Alarm이나 Logging 기반 Alert를 OCI Notifications로 연결하면 이메일/HTTPS 알림을 받을 수 있습니다.
+- 대시보드는 Monitoring과 Logging, APM 결과를 콘솔에서 묶어 볼 때 쓰면 됩니다.
+
+### 지금은 굳이 안 붙여도 되는 항목
+- `Email Delivery`: 이 앱은 아직 메일 발송 기능이 없습니다.
+- `Connector Hub`: 로그를 다른 서비스로 밀어 넣는 파이프라인이 필요할 때만 붙이면 됩니다.
+- `Bastion`: VM을 private subnet으로 바꿀 때 유용합니다. 현재처럼 public VM이면 우선순위가 낮습니다.
+
 ## DB 설정
 기본은 로컬 파일 H2를 사용합니다.
 
@@ -123,6 +172,14 @@ export DATABASE_URL=jdbc:postgresql://localhost:5432/chat
 export DATABASE_USERNAME=chat
 export DATABASE_PASSWORD=chat
 mvn spring-boot:run
+```
+
+상시가동 Docker Compose 예시:
+```bash
+POSTGRES_PASSWORD=change-me
+APP_PORT=80
+APP_MANAGEMENT_PORT=18081
+JAVA_OPTS=
 ```
 
 ## Render 배포(무료 플랜 기준)
