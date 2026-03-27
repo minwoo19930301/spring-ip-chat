@@ -3,13 +3,13 @@
 로그인 없이 접속자의 IP를 ID처럼 사용해서 대화하는 공개 채팅방입니다.
 
 ## 배포 주소
-- 서비스: [http://158.179.166.26:18080/](http://158.179.166.26:18080/)
+- 서비스: [http://144.24.81.110:8080/](http://144.24.81.110:8080/)
 - GitHub: [https://github.com/minwoo19930301/spring-ip-chat](https://github.com/minwoo19930301/spring-ip-chat)
 
 ## 기능
 - Spring WebSocket(STOMP + SockJS) 실시간 채팅
 - 로그인 없음, 발신자 식별자는 서버가 추출한 클라이언트 IP
-- Redis 1차 적재 후 PostgreSQL 최종 저장
+- Redis 1차 적재 후 RDB(Oracle/PostgreSQL) 최종 저장
 - 늦게 들어온 사용자도 기존 히스토리 조회 가능
 - 오래된 메시지 자동 정리(retention, 기본 30일)
 - 본인 메시지 삭제(IP 기준)
@@ -25,7 +25,13 @@
 - Spring Data JPA
 - H2 (로컬 기본)
 - Redis (버퍼/큐)
-- PostgreSQL (배포용)
+- Oracle DB / PostgreSQL (배포용)
+
+## 현재 운영 인프라 (2026-03-25 기준)
+- 호스팅: OCI Compute Always Free VM (`VM.Standard.E2.1.Micro`)
+- 앱 주소: [http://144.24.81.110:8080/](http://144.24.81.110:8080/)
+- 영구 DB: Oracle Autonomous Database (`IPCHATDB`)
+- 실시간 버퍼: Redis Cloud Free (`redis-19007.c299.asia-northeast1-1.gce.cloud.redislabs.com:19007`)
 
 ## 동작 원리 (아키텍처)
 ```mermaid
@@ -158,20 +164,27 @@ curl http://127.0.0.1:18081/actuator/prometheus
 ## DB 설정
 기본은 로컬 파일 H2를 사용합니다.
 
-환경변수 설정 시 PostgreSQL로 동작합니다.
+환경변수 설정 시 Oracle DB 또는 PostgreSQL로 동작합니다.
 - `DATABASE_URL`
 - `DATABASE_USERNAME`
 - `DATABASE_PASSWORD`
 - `CHAT_REDIS_ENABLED`
 - `REDIS_HOST`
 - `REDIS_PORT`
+- `REDIS_USERNAME` (ACL 사용 시)
+- `REDIS_PASSWORD`
+- `REDIS_SSL_ENABLED` (Redis Cloud면 보통 `true`)
 - `CHAT_RETENTION_DAYS` (기본 `30`, `0` 이하로 두면 자동 삭제 비활성화)
 
 예시:
 ```bash
-export DATABASE_URL=jdbc:postgresql://localhost:5432/chat
+export DATABASE_URL=jdbc:oracle:thin:@//<HOST>:1521/<SERVICE_NAME>
 export DATABASE_USERNAME=chat
 export DATABASE_PASSWORD=chat
+export REDIS_HOST=<REDIS_HOST>
+export REDIS_PORT=<REDIS_PORT>
+export REDIS_PASSWORD=<REDIS_PASSWORD>
+export REDIS_SSL_ENABLED=true
 mvn spring-boot:run
 ```
 
