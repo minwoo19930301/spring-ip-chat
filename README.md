@@ -3,7 +3,7 @@
 로그인 없이 접속자의 IP를 ID처럼 사용해서 대화하는 공개 채팅방입니다.
 
 ## 배포 주소
-- 서비스: [http://144.24.81.110:8080/](http://144.24.81.110:8080/)
+- 서비스: [http://168.107.14.108:8080/](http://168.107.14.108:8080/)
 - GitHub: [https://github.com/minwoo19930301/spring-ip-chat](https://github.com/minwoo19930301/spring-ip-chat)
 
 ## 기능
@@ -27,9 +27,10 @@
 - Redis (버퍼/큐)
 - Oracle DB / PostgreSQL (배포용)
 
-## 현재 운영 인프라 (2026-03-25 기준)
+## 현재 운영 인프라 (2026-04-13 기준)
 - 호스팅: OCI Compute Always Free VM (`VM.Standard.E2.1.Micro`)
-- 앱 주소: [http://144.24.81.110:8080/](http://144.24.81.110:8080/)
+- 앱 주소: [http://168.107.14.108:8080/](http://168.107.14.108:8080/)
+- 공인 IP: Reserved Public IP (`168.107.14.108`)
 - 영구 DB: Oracle Autonomous Database (`IPCHATDB`)
 - 실시간 버퍼: Redis Cloud Free (`redis-19007.c299.asia-northeast1-1.gce.cloud.redislabs.com:19007`)
 
