@@ -6,6 +6,31 @@
 - 서비스: [http://168.107.14.108:8080/](http://168.107.14.108:8080/)
 - GitHub: [https://github.com/minwoo19930301/spring-ip-chat](https://github.com/minwoo19930301/spring-ip-chat)
 
+## 운영 구조 한눈에 보기
+```mermaid
+flowchart TB
+    User["사용자 브라우저"] -->|"HTTP / WS"| Public["Reserved Public IP<br/>168.107.14.108:8080"]
+    Public --> VM["OCI Always Free VM<br/>Spring Boot Chat App"]
+
+    VM -->|"STOMP/SockJS"| WS["WebSocket Endpoint<br/>/ws-chat"]
+    VM -->|"REST"| API["History API<br/>/api/messages, /api/me"]
+
+    WS -->|"실시간 송수신"| Live["실시간 채팅 전달"]
+    API -->|"최근 히스토리 반환"| History["과거 메시지 조회"]
+
+    VM -->|"1차 적재"| Redis["Redis Cloud (Buffer)"]
+    Redis -->|"배치 flush"| Oracle["Oracle Autonomous DB (영구 저장)"]
+    VM -->|"조회 시 병합"| Oracle
+
+    Oracle -->|"retention 정책"| Cleanup["오래된 메시지 정리"]
+```
+
+역할 분리:
+- `WebSocket`: 접속 중 사용자에게 메시지를 즉시 브로드캐스트
+- `Redis`: 입력 직후 메시지 버퍼링과 flush 대기 큐
+- `Oracle DB`: 최종 영구 저장소(재접속 시 히스토리 제공)
+- `OCI VM`: 채팅 애플리케이션 단일 런타임(24시간 상시 구동)
+
 ## 기능
 - Spring WebSocket(STOMP + SockJS) 실시간 채팅
 - 로그인 없음, 발신자 식별자는 서버가 추출한 클라이언트 IP
@@ -27,7 +52,7 @@
 - Redis (버퍼/큐)
 - Oracle DB / PostgreSQL (배포용)
 
-## 현재 운영 인프라 (2026-04-13 기준)
+## 현재 운영 인프라 (2026-04-14 기준)
 - 호스팅: OCI Compute Always Free VM (`VM.Standard.E2.1.Micro`)
 - 앱 주소: [http://168.107.14.108:8080/](http://168.107.14.108:8080/)
 - 공인 IP: Reserved Public IP (`168.107.14.108`)
