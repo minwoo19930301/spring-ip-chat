@@ -1,83 +1,84 @@
-# spring-ip-chat
+# 💬 Spring IP Chat (공개 IP 기반 실시간 익명 채팅방)
 
-로그인 없이 접속자의 IP를 ID처럼 사용해서 대화하는 공개 채팅방입니다.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-http%3A%2F%2F168.107.14.108%3A8080-brightgreen?style=for-the-badge&logo=oracle)](http://168.107.14.108:8080/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.9-green.svg?style=for-the-badge&logo=springboot)](https://spring.io/projects/spring-boot)
+[![Java 17](https://img.shields.io/badge/Java-17-orange.svg?style=for-the-badge&logo=openjdk)](https://www.oracle.com/java/)
+[![Redis](https://img.shields.io/badge/Redis-Cloud-dc382d.svg?style=for-the-badge&logo=redis)](https://redis.io/)
+[![Oracle DB](https://img.shields.io/badge/Oracle-Autonomous%20DB-f80000.svg?style=for-the-badge&logo=oracle)](https://www.oracle.com/database/)
 
-## 배포 주소
-- 서비스: [http://168.107.14.108:8080/](http://168.107.14.108:8080/)
-- GitHub: [https://github.com/minwoo19930301/spring-ip-chat](https://github.com/minwoo19930301/spring-ip-chat)
+> **별도의 회원가입이나 로그인 없이 접속자의 공인 IP를 발신자 ID로 사용하여 즉시 실시간 대화를 나누는 익명 웹소켓 채팅 애플리케이션입니다.**  
+> Spring Boot 3 + STOMP WebSocket 기반으로 동작하며, Redis Cloud 1차 버퍼링과 Oracle Autonomous DB / PostgreSQL 2차 영구 적재 구조로 설계되어 24시간 상시 가동 환경에서도 지연 없는 실시간 브로드캐스팅 및 히스토리 조회를 제공합니다.
 
-## 운영 구조 한눈에 보기
+---
+
+## 🔗 주요 링크 및 라이브 데모
+
+- **실제 상시 배포 서버**: [http://168.107.14.108:8080/](http://168.107.14.108:8080/) (OCI Always Free VM)
+- **GitHub 저장소**: [minwoo19930301/spring-ip-chat](https://github.com/minwoo19930301/spring-ip-chat)
+
+---
+
+## 🏗️ 운영 아키텍처 한눈에 보기
+
 ```mermaid
 flowchart TB
-    User["사용자 브라우저"] -->|"HTTP / WS"| Public["Reserved Public IP<br/>168.107.14.108:8080"]
+    User["사용자 브라우저 (Client)"] -->|"HTTP / WebSocket"| Public["Reserved Public IP<br/>168.107.14.108:8080"]
     Public --> VM["OCI Always Free VM<br/>Spring Boot Chat App"]
 
     VM -->|"STOMP/SockJS"| WS["WebSocket Endpoint<br/>/ws-chat"]
     VM -->|"REST"| API["History API<br/>/api/messages, /api/me"]
 
-    WS -->|"실시간 송수신"| Live["실시간 채팅 전달"]
-    API -->|"최근 히스토리 반환"| History["과거 메시지 조회"]
+    WS -->|"실시간 브로드캐스트"| Live["실시간 대화 전달"]
+    API -->|"최근 히스토리 반환"| History["과거 메시지 불러오기"]
 
-    VM -->|"1차 적재"| Redis["Redis Cloud (Buffer)"]
-    Redis -->|"배치 flush"| Oracle["Oracle Autonomous DB (영구 저장)"]
+    VM -->|"1차 고속 적재"| Redis["Redis Cloud (Buffer)"]
+    Redis -->|"주기적 배치 Flush"| Oracle["Oracle Autonomous DB (영구 저장)"]
     VM -->|"조회 시 병합"| Oracle
 
-    Oracle -->|"retention 정책"| Cleanup["오래된 메시지 정리"]
+    Oracle -->|"Retention 정책"| Cleanup["오래된 메시지 자동 정제"]
 ```
 
-역할 분리:
-- `WebSocket`: 접속 중 사용자에게 메시지를 즉시 브로드캐스트
-- `Redis`: 입력 직후 메시지 버퍼링과 flush 대기 큐
-- `Oracle DB`: 최종 영구 저장소(재접속 시 히스토리 제공)
-- `OCI VM`: 채팅 애플리케이션 단일 런타임(24시간 상시 구동)
+### ⚙️ 역할 분리 (Layer Responsibilities)
+* **WebSocket (`STOMP / SockJS`)**: 현재 접속 중인 모든 사용자에게 메시지를 sub-millisecond 단위로 실시간 브로드캐스팅.
+* **Redis (`1차 버퍼`)**: 메시지 수신 직후 고속 적재 및 메모리 버퍼링, DB 배치 Flush 이전에도 병합 조회 지원.
+* **Oracle Autonomous DB (`2차 영구 저장`)**: 메시지 영구 저장 및 재접속 사용자를 위한 과거 히스토리 제공.
+* **OCI Compute VM (`Standard.E2.1.Micro`)**: Docker 컨테이너 단일 런타임 24시간 무중단 운영.
 
-## 기능
-- Spring WebSocket(STOMP + SockJS) 실시간 채팅
-- 로그인 없음, 발신자 식별자는 서버가 추출한 클라이언트 IP
-- Redis 1차 적재 후 RDB(Oracle/PostgreSQL) 최종 저장
-- 늦게 들어온 사용자도 기존 히스토리 조회 가능
-- 오래된 메시지 자동 정리(retention, 기본 30일)
-- 본인 메시지 삭제(IP 기준)
-- 기본 HTML UI (CSS 최소)
+---
 
-## 기술 스택
-- Java 17
-- Spring Boot 3
-- Spring WebSocket
-- Spring Boot Actuator
-- Micrometer Prometheus
-- Spring Data Redis
-- Spring Data JPA
-- H2 (로컬 기본)
-- Redis (버퍼/큐)
-- Oracle DB / PostgreSQL (배포용)
+## ✨ 핵심 기능
 
-## 현재 운영 인프라 (2026-04-14 기준)
-- 호스팅: OCI Compute Always Free VM (`VM.Standard.E2.1.Micro`)
-- 앱 주소: [http://168.107.14.108:8080/](http://168.107.14.108:8080/)
-- 공인 IP: Reserved Public IP (`168.107.14.108`)
-- 영구 DB: Oracle Autonomous Database (`IPCHATDB`)
-- 실시간 버퍼: Redis Cloud Free (`redis-19007.c299.asia-northeast1-1.gce.cloud.redislabs.com:19007`)
+1. **로그인 없는 익명 IP 식별**:
+   * 서버가 웹소켓 세션 및 HTTP 요청 헤더에서 클라이언트의 실재 공인 IP를 자동 추출하여 닉네임 대신 식별자로 활용.
+2. **Spring WebSocket + STOMP 실시간 소통**:
+   * SockJS 폴백 지원으로 브라우저 호환성을 극대화하고, `/topic/public` 채널을 통해 실시간 메시지 전송.
+3. **Redis & DB 2단계 하이브리드 저장소**:
+   * 메시지 입력 직후 Redis 1차 버퍼링 ➔ 주기적 스케줄러를 통한 DB 2차 영구 적재.
+4. **대화 히스토리 및 본인 메시지 관리**:
+   * 신규 접속자도 이전 대화 히스토리(`GET /api/messages`) 자동 조회.
+   * 본인 IP 기준 메시지 삭제 기능 지원.
+5. **오래된 메시지 자동 정제 (Retention)**:
+   * 설정된 보관 기간(기본 30일)이 지난 메시지는 배치 작업으로 자동 뷰 정제.
+6. **관측성 (Observability & Actuator)**:
+   * Prometheus 메트릭 수집(`/actuator/prometheus`) 및 Liveness/Readiness 헬스 체크 엔드포인트 분리 제공.
 
-## 동작 원리 (아키텍처)
-```mermaid
-flowchart LR
-    BrowserA["브라우저 A"] -->|"WebSocket 연결 (/ws-chat)"| WS["Spring WebSocket(STOMP)"]
-    BrowserB["브라우저 B"] -->|"WebSocket 연결 (/ws-chat)"| WS
-    BrowserC["브라우저 C"] -->|"입장 시 히스토리 요청 (/api/messages)"| REST["Spring REST API"]
+---
 
-    WS -->|"메시지 수신 (/app/chat.send)"| Controller["ChatSocketController"]
-    Controller -->|"메시지 1차 적재"| Service["ChatService"]
-    Service -->|"HSET / ZADD"| Redis["Redis Buffer"]
-    Service -->|"최근 메시지 병합 조회"| DB["Database (H2/PostgreSQL)"]
-    Redis -->|"주기적 flush"| DB
-    Controller -->|"브로드캐스트 (/topic/public)"| WS
-    WS -->|"실시간 수신"| BrowserA
-    WS -->|"실시간 수신"| BrowserB
-    REST -->|"최근 메시지 JSON 반환"| BrowserC
-```
+## 🛠️ 기술 스택 (Tech Stack)
 
-## 메시지 흐름 (시퀀스)
+| 구분 | 기술 스택 |
+| :--- | :--- |
+| **Language & Framework** | Java 17, Spring Boot 3.3.9, Spring WebSocket |
+| **Messaging Protocol** | STOMP, SockJS |
+| **Database & Caching** | Redis Cloud, Oracle Autonomous DB, PostgreSQL, H2 (로컬) |
+| **Observability** | Spring Boot Actuator, Micrometer Prometheus |
+| **Deployment & Infra** | Docker, Docker Compose, OCI (Oracle Cloud Infrastructure) Always Free |
+
+---
+
+## 🔄 메시지 흐름 시퀀스 (Sequence Diagram)
+
 ```mermaid
 sequenceDiagram
     participant Sender as 사용자(보내는 사람)
@@ -89,157 +90,53 @@ sequenceDiagram
     participant Others as 다른 접속자들
 
     Sender->>WS: WebSocket 메시지 전송 (/app/chat.send)
-    WS->>C: 메시지 전달 + 세션의 IP 정보
+    WS->>C: 메시지 전달 + 세션 IP 정보
     C->>S: saveMessage(ip, content)
-    S->>R: HSET / ZADD pending 메시지
+    S->>R: HSET / ZADD pending 메시지 고속 적재
     R-->>S: 적재 완료
     S-->>C: Redis messageKey 포함 응답
     C-->>WS: /topic/public 으로 브로드캐스트
     WS-->>Others: 실시간 메시지 수신
-    S->>DB: 주기적으로 flush
+    S->>DB: 주기적 스케줄러로 배치 Flush
     DB-->>S: 영구 저장 완료
 ```
 
-## WebSocket의 역할
-- 로그인 없이 접속한 사용자들이 실시간으로 메시지를 주고받게 합니다.
-- 클라이언트가 `/app/chat.send`로 보낸 메시지를 서버가 받아 처리하게 합니다.
-- Redis에 적재된 메시지를 `/topic/public`으로 모든 접속자에게 즉시 브로드캐스트합니다.
-- 즉, "지금 접속 중인 사람들"의 실시간 전달을 담당합니다.
+---
 
-## Redis의 역할
-- 새 메시지를 가장 먼저 받아서 짧은 지연으로 적재합니다.
-- `pending` 메시지 목록을 들고 있다가 스케줄러가 주기적으로 DB로 flush합니다.
-- DB flush 전에도 최근 히스토리 조회 시 Redis pending 메시지를 함께 합쳐 보여줍니다.
-- 즉, "실시간 입력 버퍼와 최종 DB 적재 전 임시 저장소" 역할입니다.
+## 💻 로컬 개발 환경 실행
 
-## DB의 역할
-- Redis에서 내려온 메시지를 `chat_messages` 테이블에 영구 저장합니다.
-- 새로 들어온 사용자가 `GET /api/messages`로 과거 대화를 불러올 수 있게 합니다.
-- 서버 재시작 이후에도 히스토리를 유지합니다(특히 PostgreSQL 사용 시).
-- 즉, "과거 대화 기록 보존과 조회"를 담당합니다.
-
-## 로컬 실행
 ```bash
+# 저장소 클론
+git clone https://github.com/minwoo19930301/spring-ip-chat.git
 cd spring-ip-chat
+
+# Maven Wrapper로 바로 실행 (로컬 H2 DB 기본 동작)
 ./mvnw spring-boot:run
 ```
 
-`mvnw`가 없으면:
-```bash
-mvn spring-boot:run
-```
+실행 후 브라우저에서 **[http://localhost:8080](http://localhost:8080)** 접속.
 
-실행 후 접속:
-- [http://localhost:8080](http://localhost:8080)
+---
 
-## 주요 API
-- `GET /api/me`: 서버 기준 내 IP 확인
-- `GET /api/messages?limit=200`: 최근 채팅 히스토리 조회
-- WebSocket Endpoint: `/ws-chat`
-- Send Destination: `/app/chat.send`
-- Subscribe Topic: `/topic/public`
+## 📡 주요 REST API & WebSocket 엔드포인트
 
-## 관측성(Observability)
-앱에는 관측성용 관리 포트를 따로 분리해 두었습니다.
+| 방식 | 엔드포인트 | 설명 |
+| :--- | :--- | :--- |
+| `GET` | `/api/me` | 서버 기준 본인의 공인 IP 확인 |
+| `GET` | `/api/messages?limit=200` | 최근 채팅 과거 히스토리 조회 |
+| `WS` | `/ws-chat` | WebSocket 연결 핸드쉐이크 엔드포인트 |
+| `SEND` | `/app/chat.send` | 메시지 발신 주소 |
+| `SUB` | `/topic/public` | 메시지 실시간 수신 구독 채널 |
 
-- 공개 앱 포트: `APP_PORT` (기본 `80`)
-- 관리 포트: `APP_MANAGEMENT_PORT` -> 컨테이너 내부 `8081`
-- 앱 자체도 기본적으로 `MANAGEMENT_ADDRESS=127.0.0.1`에 바인딩됩니다.
-- Docker Compose에서는 `127.0.0.1:${APP_MANAGEMENT_PORT}:8081`로만 바인딩되므로 외부 인터넷에 그대로 노출되지 않습니다.
+---
 
-활성 엔드포인트:
-- `GET /actuator/health`
-- `GET /actuator/health/liveness`
-- `GET /actuator/health/readiness`
-- `GET /actuator/info`
-- `GET /actuator/metrics`
-- `GET /actuator/prometheus`
+## 🚀 배포 가이드
 
-예시:
-```bash
-curl http://127.0.0.1:18081/actuator/health
-curl http://127.0.0.1:18081/actuator/prometheus
-```
+- 🟢 **상시가동 (24시간 무중단 OCI VM 배포)**: [`DEPLOY_ALWAYS_ON_KR.md`](./DEPLOY_ALWAYS_ON_KR.md) 참조
+- 🔵 **무료 클라우드 (Render / PaaS 배포)**: [`DEPLOY_FREE_KR.md`](./DEPLOY_FREE_KR.md) 참조
 
-### OCI에 붙일 수 있는 항목
-실제로 붙일 가치가 있는 건 아래 4개입니다.
+---
 
-1. `Monitoring`
-- Compute 기본 메트릭(CPU, 메모리, 네트워크)과 함께 앱 메트릭을 봅니다.
-- 앱 쪽은 `/actuator/prometheus`를 Management Agent나 수집 에이전트가 읽을 수 있게 준비해 둔 상태입니다.
+## 📄 라이선스 (License)
 
-2. `Logging`
-- Spring 로그는 stdout으로 나가도록 맞춰 두었습니다.
-- Docker 컨테이너 로그 또는 systemd/journald 로그를 OCI Logging으로 수집하면 됩니다.
-- 로그 패턴에 `traceId`, `spanId` 자리를 미리 넣어 두어서 APM 추적과 연결하기 쉽게 했습니다.
-
-3. `APM`
-- 코드 레벨 대공사는 필요 없습니다.
-- APM Java agent를 붙일 수 있게 `JAVA_OPTS` 훅을 열어 두었습니다.
-- 예를 들어 `JAVA_OPTS=-javaagent:/opt/oracle-apm-agent/apm-agent.jar ...` 형태로 주입하면 됩니다.
-
-4. `Notifications` / `Console Dashboards`
-- Monitoring Alarm이나 Logging 기반 Alert를 OCI Notifications로 연결하면 이메일/HTTPS 알림을 받을 수 있습니다.
-- 대시보드는 Monitoring과 Logging, APM 결과를 콘솔에서 묶어 볼 때 쓰면 됩니다.
-
-### 지금은 굳이 안 붙여도 되는 항목
-- `Email Delivery`: 이 앱은 아직 메일 발송 기능이 없습니다.
-- `Connector Hub`: 로그를 다른 서비스로 밀어 넣는 파이프라인이 필요할 때만 붙이면 됩니다.
-- `Bastion`: VM을 private subnet으로 바꿀 때 유용합니다. 현재처럼 public VM이면 우선순위가 낮습니다.
-
-## DB 설정
-기본은 로컬 파일 H2를 사용합니다.
-
-환경변수 설정 시 Oracle DB 또는 PostgreSQL로 동작합니다.
-- `DATABASE_URL`
-- `DATABASE_USERNAME`
-- `DATABASE_PASSWORD`
-- `CHAT_REDIS_ENABLED`
-- `REDIS_HOST`
-- `REDIS_PORT`
-- `REDIS_USERNAME` (ACL 사용 시)
-- `REDIS_PASSWORD`
-- `REDIS_SSL_ENABLED` (Redis Cloud면 보통 `true`)
-- `CHAT_RETENTION_DAYS` (기본 `30`, `0` 이하로 두면 자동 삭제 비활성화)
-
-예시:
-```bash
-export DATABASE_URL=jdbc:oracle:thin:@//<HOST>:1521/<SERVICE_NAME>
-export DATABASE_USERNAME=chat
-export DATABASE_PASSWORD=chat
-export REDIS_HOST=<REDIS_HOST>
-export REDIS_PORT=<REDIS_PORT>
-export REDIS_PASSWORD=<REDIS_PASSWORD>
-export REDIS_SSL_ENABLED=true
-mvn spring-boot:run
-```
-
-상시가동 Docker Compose 예시:
-```bash
-POSTGRES_PASSWORD=change-me
-APP_PORT=80
-APP_MANAGEMENT_PORT=18081
-JAVA_OPTS=
-```
-
-## Render 배포(무료 플랜 기준)
-1. GitHub에 이 프로젝트를 푸시
-2. Render에서 새 `Blueprint` 생성 후 저장소 연결 (`render.yaml` 자동 인식)
-3. Web Service 생성 후 환경변수 추가
-4. 배포 완료 후 제공 URL 접속
-
-배포 시 환경변수:
-```bash
-DATABASE_URL=jdbc:postgresql://<HOST>:<PORT>/<DB>?sslmode=require
-DATABASE_USERNAME=<USER>
-DATABASE_PASSWORD=<PASSWORD>
-```
-
-자세한 무료 배포 절차:
-- [`DEPLOY_FREE_KR.md`](./DEPLOY_FREE_KR.md)
-
-## 상시가동(24시간) 배포
-슬립 없는 24시간 상시가동이 필요하면 VM 방식으로 운영하세요.
-
-- [`DEPLOY_ALWAYS_ON_KR.md`](./DEPLOY_ALWAYS_ON_KR.md)
-- [`docker-compose.always-on.yml`](./docker-compose.always-on.yml)
+본 프로젝트는 **[MIT License](LICENSE)**에 따라 자유롭게 이용, 수정 및 재배포할 수 있습니다.
