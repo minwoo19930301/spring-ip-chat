@@ -1,11 +1,5 @@
 # 💬 Spring IP Chat (공개 IP 기반 실시간 익명 채팅방)
 
-<!-- PROJECT-PRESENTATION:START -->
-<a href="http://168.107.14.108:8080/"><img src=".github/project-cover.svg" alt="💬 Spring IP Chat (공개 IP 기반 실시간 익명 채팅방)" width="960"></a>
-
-[![OPEN APP](https://img.shields.io/badge/OPEN%20APP-2C6049?style=for-the-badge)](http://168.107.14.108:8080/) [![QUICK START](https://img.shields.io/badge/QUICK%20START-374151?style=for-the-badge)](#-로컬-개발-환경-실행) [![SOURCE](https://img.shields.io/badge/SOURCE-444444?style=for-the-badge)](https://github.com/minwoo19930301/spring-ip-chat)
-<!-- PROJECT-PRESENTATION:END -->
-
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-http%3A%2F%2F168.107.14.108%3A8080-brightgreen?style=for-the-badge&logo=oracle)](http://168.107.14.108:8080/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.9-green.svg?style=for-the-badge&logo=springboot)](https://spring.io/projects/spring-boot)
