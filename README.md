@@ -140,3 +140,9 @@ cd spring-ip-chat
 ## 📄 라이선스 (License)
 
 본 프로젝트는 **[MIT License](LICENSE)**에 따라 자유롭게 이용, 수정 및 재배포할 수 있습니다.
+
+## 공개 편집 모드
+
+`/god`에서 최근 500개 메시지를 불러와 추가·수정·삭제합니다. 요청에 따라 별도 인증이 없으며 누구나 접근할 수 있습니다. 수정 시 작성자와 작성 시간은 유지되고 일반 채팅에도 실시간 반영됩니다. 삭제는 되돌릴 수 없습니다.
+
+API: `POST /api/god/messages`, `PUT /api/god/messages/{ref}`, `DELETE /api/god/messages/{ref}`. 추가·수정 본문은 `{"content":"메시지"}`입니다.

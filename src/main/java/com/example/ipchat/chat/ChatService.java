@@ -18,6 +18,21 @@ import java.util.UUID;
 public class ChatService {
 
     private static final int MAX_LIMIT = 500;
+    private final java.util.concurrent.locks.ReentrantLock mutationLock = new java.util.concurrent.locks.ReentrantLock();
+
+    // Keep Redis flush and edits serialized through the database commit.
+    private final class MutationGuard implements AutoCloseable {
+        private final boolean transactional;
+        MutationGuard() {
+            mutationLock.lock();
+            transactional=org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive();
+            if(transactional) org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override public void afterCompletion(int status) {mutationLock.unlock();}
+                });
+        }
+        @Override public void close() {if(!transactional)mutationLock.unlock();}
+    }
 
     private final ChatMessageRepository chatMessageRepository;
     private final RedisChatBuffer redisChatBuffer;
@@ -66,6 +81,7 @@ public class ChatService {
 
     @Transactional
     public int flushPendingMessages(int batchSize) {
+        try (MutationGuard guard = new MutationGuard()) {
         if (!redisChatBuffer.isEnabled() || batchSize <= 0) {
             return 0;
         }
@@ -86,10 +102,12 @@ public class ChatService {
         }
 
         return flushedCount;
+            }
     }
 
     @Transactional
     public String deleteMessage(String messageRef, String requesterIp) {
+        try (MutationGuard guard = new MutationGuard()) {
         String cleanIp = normalizeIp(requesterIp);
 
         RedisQueuedChatMessage pendingMessage = redisChatBuffer.findPendingMessage(messageRef);
@@ -108,6 +126,34 @@ public class ChatService {
 
         chatMessageRepository.delete(message);
         return toMessageRef(ChatMessageResponse.fromEntity(message));
+            }
+    }
+
+    @Transactional
+    public ChatMessageResponse editMessage(String ref, String content) {
+        try (MutationGuard guard = new MutationGuard()) {
+        String clean=normalizeContent(content);
+        RedisQueuedChatMessage pending=redisChatBuffer.findPendingMessage(ref);
+        if(pending!=null) {
+            redisChatBuffer.updatePendingMessage(pending, clean);
+            return ChatMessageResponse.fromQueued(new RedisQueuedChatMessage(pending.messageKey(),pending.senderIp(),clean,pending.sentAt()));
+        }
+        ChatMessage message=resolvePersistedMessage(ref);
+        message.setContent(clean);
+        return ChatMessageResponse.fromEntity(chatMessageRepository.save(message));
+            }
+    }
+
+    @Transactional
+    public String deleteAnyMessage(String ref) {
+        try (MutationGuard guard = new MutationGuard()) {
+        RedisQueuedChatMessage pending=redisChatBuffer.findPendingMessage(ref);
+        ChatMessage persisted=chatMessageRepository.findByMessageKey(ref).orElse(null);
+        if(persisted==null && pending==null) persisted=resolvePersistedMessage(ref);
+        if(pending!=null) redisChatBuffer.removePendingMessage(ref);
+        if(persisted!=null) chatMessageRepository.delete(persisted);
+        return pending!=null?ref:toMessageRef(ChatMessageResponse.fromEntity(persisted));
+            }
     }
 
     private ChatMessage saveDirectlyToDatabase(String messageKey, String senderIp, String content, Instant sentAt) {
