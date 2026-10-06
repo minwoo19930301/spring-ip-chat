@@ -70,4 +70,15 @@ class ChatServiceTests {
 
         assertThrows(NoSuchElementException.class, () -> chatService.deleteMessage("999", "1.2.3.4"));
     }
+    @Test
+    void editPendingKeepsAuthorAndTimestamp() {
+        Instant time=Instant.parse("2026-01-01T00:00:00Z");
+        RedisQueuedChatMessage pending=new RedisQueuedChatMessage("key","1.2.3.4","old",time);
+        when(redisChatBuffer.findPendingMessage("key")).thenReturn(pending);
+        var result=chatService.editMessage("key"," new ");
+        assertEquals("new", result.content());
+        assertEquals(time, result.sentAt());
+        assertEquals("1.2.3.4", result.senderIp());
+        verify(redisChatBuffer).updatePendingMessage(pending,"new");
+    }
 }

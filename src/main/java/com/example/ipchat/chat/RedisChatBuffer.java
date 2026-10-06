@@ -72,6 +72,11 @@ public class RedisChatBuffer {
         return readJson(rawPayload);
     }
 
+    public void updatePendingMessage(RedisQueuedChatMessage message, String content) {
+        redisTemplate.opsForHash().put(PENDING_MESSAGES_KEY, message.messageKey(),
+                writeJson(new RedisQueuedChatMessage(message.messageKey(), message.senderIp(), content, message.sentAt())));
+    }
+
     public boolean removePendingMessage(String messageKey) {
         if (!enabled || messageKey == null || messageKey.isBlank()) {
             return false;
