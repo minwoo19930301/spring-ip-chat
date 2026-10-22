@@ -14,7 +14,7 @@
 
 ## 🔗 주요 링크 및 라이브 데모
 
-- **실제 상시 배포 서버**: [http://168.107.14.108:8080/](http://168.107.14.108:8080/) (OCI Always Free VM)
+- **실제 상시 배포 서버**: [[http://168.107.14.108:8080/](http://134.185.119.246:8080/)](http://134.185.119.246:8080/) (OCI Always Free VM)
 - **GitHub 저장소**: [minwoo19930301/spring-ip-chat](https://github.com/minwoo19930301/spring-ip-chat)
 
 ---
