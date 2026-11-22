@@ -1,6 +1,6 @@
 # 💬 Spring IP Chat (공개 IP 기반 실시간 익명 채팅방)
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-http%3A%2F%2F168.107.14.108%3A8080-brightgreen?style=for-the-badge&logo=oracle)](http://168.107.14.108:8080/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-https%3A%2F%2Fipchat.ai--ing.org-brightgreen?style=for-the-badge&logo=oracle)](https://ipchat.ai-ing.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.9-green.svg?style=for-the-badge&logo=springboot)](https://spring.io/projects/spring-boot)
 [![Java 17](https://img.shields.io/badge/Java-17-orange.svg?style=for-the-badge&logo=openjdk)](https://www.oracle.com/java/)
@@ -14,7 +14,7 @@
 
 ## 🔗 주요 링크 및 라이브 데모
 
-- **실제 상시 배포 서버**: [[http://168.107.14.108:8080/](http://134.185.119.246:8080/)](http://134.185.119.246:8080/) (OCI Always Free VM)
+- **실제 상시 배포 서버**: [https://ipchat.ai-ing.org/](https://ipchat.ai-ing.org/) (OCI Always Free VM)
 - **GitHub 저장소**: [minwoo19930301/spring-ip-chat](https://github.com/minwoo19930301/spring-ip-chat)
 
 ---
@@ -23,7 +23,7 @@
 
 ```mermaid
 flowchart TB
-    User["사용자 브라우저 (Client)"] -->|"HTTP / WebSocket"| Public["Reserved Public IP<br/>168.107.14.108:8080"]
+    User["사용자 브라우저 (Client)"] -->|"HTTP / WebSocket"| Public["Reserved Public IP<br/>134.185.119.246:8080"]
     Public --> VM["OCI Always Free VM<br/>Spring Boot Chat App"]
 
     VM -->|"STOMP/SockJS"| WS["WebSocket Endpoint<br/>/ws-chat"]
